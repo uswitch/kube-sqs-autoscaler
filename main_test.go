@@ -13,8 +13,8 @@ import (
 	kclient "k8s.io/kubernetes/pkg/client/unversioned"
 	"k8s.io/kubernetes/pkg/watch"
 
-	"github.com/Wattpad/kube-sqs-autoscaler/scale"
-	mainsqs "github.com/Wattpad/kube-sqs-autoscaler/sqs"
+	"github.com/uswitch/kube-sqs-autoscaler/scale"
+	mainsqs "github.com/uswitch/kube-sqs-autoscaler/sqs"
 )
 
 func TestRunReachMinReplicas(t *testing.T) {

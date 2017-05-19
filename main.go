@@ -6,8 +6,8 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 
-	"github.com/Wattpad/kube-sqs-autoscaler/scale"
-	"github.com/Wattpad/kube-sqs-autoscaler/sqs"
+	"github.com/uswitch/kube-sqs-autoscaler/scale"
+	"github.com/uswitch/kube-sqs-autoscaler/sqs"
 )
 
 var (
@@ -88,9 +88,9 @@ func main() {
 
 	flag.Parse()
 
+	log.Info("Starting kube-sqs-autoscaler for deployment " + kubernetesDeploymentName + " and namespace " + kubernetesNamespace)
 	p := scale.NewPodAutoScaler(kubernetesDeploymentName, kubernetesNamespace, maxPods, minPods)
 	sqs := sqs.NewSqsClient(sqsQueueUrl, awsRegion)
 
-	log.Info("Starting kube-sqs-autoscaler")
 	Run(p, sqs)
 }
