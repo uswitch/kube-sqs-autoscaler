@@ -30,6 +30,7 @@ func Run(p *scale.PodAutoScaler, sqs *sqs.SqsClient) {
 	lastScaleDownTime := time.Now()
 
 	for {
+		log.Info("inside polling loop")
 		select {
 		case <-time.After(pollInterval):
 			{
