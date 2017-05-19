@@ -32,7 +32,7 @@ func NewPodAutoScaler(kubernetesDeploymentName string, kubernetesNamespace strin
 	if err != nil {
 		panic("Failed to configure client")
 	}
-
+	log.Infof("Configured with namespace " + kubernetesNamespace)
 	return &PodAutoScaler{
 		Client:     k8sClient,
 		Min:        min,
