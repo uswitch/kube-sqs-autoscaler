@@ -1,11 +1,12 @@
 package scale
 
 import (
-	"github.com/pkg/errors"
-
+	"fmt"
 	log "github.com/Sirupsen/logrus"
+	"github.com/pkg/errors"
+	"reflect"
 
-	"k8s.io/kubernetes/pkg/api"
+	//	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/client/restclient"
 	kclient "k8s.io/kubernetes/pkg/client/unversioned"
 )
@@ -48,16 +49,16 @@ func (p *PodAutoScaler) ScaleUp() error {
 	if err != nil {
 		return errors.Wrap(err, "Failed to get deployment from kube server, no scale up occured")
 	}
+	log.Debugf("deployment type = %s", reflect.TypeOf(deployment))
 
 	currentReplicas := deployment.Spec.Replicas
 
 	if currentReplicas >= int32(p.Max) {
-		return errors.New("Max pods reached")
+		log.WithFields(log.Fields{"maxPods": p.Max, "currentReplicas": currentReplicas}).Info("At max pods")
+		return nil
 	}
 
-	deployment.Spec.Replicas = currentReplicas + 1
-
-	_, err = p.Client.Deployments(p.Namespace).Update(deployment)
+	err = p.SetReplicas(currentReplicas + 1)
 	if err != nil {
 		return errors.Wrap(err, "Failed to scale up")
 	}
@@ -72,20 +73,48 @@ func (p *PodAutoScaler) ScaleDown() error {
 	if err != nil {
 		return errors.Wrap(err, "Failed to get deployment from kube server, no scale down occured")
 	}
+	log.Debugf("deployment type = %s", reflect.TypeOf(deployment))
 
 	currentReplicas := deployment.Spec.Replicas
 
 	if currentReplicas <= int32(p.Min) {
-		return errors.New("Min pods reached")
+		log.WithFields(log.Fields{"minPods": p.Max, "currentReplicas": currentReplicas}).Info("At min pods")
+		return nil
 	}
 
-	deployment.Spec.Replicas = currentReplicas - 1
-
-	deployment, err = p.Client.Deployments(api.NamespaceDefault).Update(deployment)
+	err = p.SetReplicas(currentReplicas - 1)
 	if err != nil {
 		return errors.Wrap(err, "Failed to scale down")
 	}
 
 	log.Infof("Scale down successful. Replicas: %d", deployment.Spec.Replicas)
+	return nil
+}
+
+func (p *PodAutoScaler) SetReplicas(newReplicas int32) error {
+	log.Infof("SetReplicas call, deployment api call : p.Client.Deployments(" + p.Namespace + ").Get(" + p.Deployment + ") ")
+	deployment, err := p.Client.Deployments(p.Namespace).Get(p.Deployment)
+	if err != nil {
+		return errors.Wrap(err, "Failed to get deployment from kube server in SetReplicas function, no change occurred")
+	}
+
+	currentReplicas := deployment.Spec.Replicas
+
+	if currentReplicas < int32(p.Min) {
+		return errors.New(fmt.Sprintf("Set replicas called with value %d below minimum of %d", newReplicas, p.Min))
+	}
+	if currentReplicas > int32(p.Max) {
+		return errors.New(fmt.Sprintf("Set replicas called with value %d above maximum of %d", newReplicas, p.Max))
+	}
+
+	deployment.Spec.Replicas = newReplicas
+
+	log.Infof("SetReplicas call, deployment api call : p.Client.Deployments(" + p.Namespace + ").Update(" + p.Deployment + ") ")
+	deployment, err = p.Client.Deployments(p.Namespace).Update(deployment)
+	if err != nil {
+		return errors.Wrap(err, "Failed to set replicas")
+	}
+
+	log.Infof("Scale successful. Replicas: %d", deployment.Spec.Replicas)
 	return nil
 }

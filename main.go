@@ -36,13 +36,13 @@ func Run(p *scale.PodAutoScaler, sqs *sqs.SqsClient) {
 			{
 				numMessages, err := sqs.NumMessages()
 				if err != nil {
-					log.Errorf("Failed to get SQS messages: %v", err)
+					log.WithFields(log.Fields{"sqs-queue": sqsQueueUrl, "error": err}).Errorf("Failed to get SQS messages")
 					continue
 				}
 
 				if numMessages >= scaleUpMessages {
 					if lastScaleUpTime.Add(scaleUpCoolPeriod).After(time.Now()) {
-						log.Info("Waiting for cool down, skipping scale up ")
+						log.Info("Waiting for cool off, skipping scale up ")
 						continue
 					}
 
@@ -56,7 +56,7 @@ func Run(p *scale.PodAutoScaler, sqs *sqs.SqsClient) {
 
 				if numMessages <= scaleDownMessages {
 					if lastScaleDownTime.Add(scaleDownCoolPeriod).After(time.Now()) {
-						log.Info("Waiting for cool down, skipping scale down")
+						log.Info("Waiting for cool off, skipping scale down")
 						continue
 					}
 
