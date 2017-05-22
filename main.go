@@ -30,41 +30,39 @@ func Run(p *scale.PodAutoScaler, sqs *sqs.SqsClient) {
 	lastScaleDownTime := time.Now()
 
 	for {
-		log.Info("inside polling loop")
+		log.WithFields(log.Fields{"kubernetesDeploymentName": kubernetesDeploymentName}).Info("inside polling loop")
 		select {
 		case <-time.After(pollInterval):
 			{
 				numMessages, err := sqs.NumMessages()
 				if err != nil {
-					log.WithFields(log.Fields{"sqs-queue": sqsQueueUrl, "error": err}).Errorf("Failed to get SQS messages")
+					log.WithFields(log.Fields{"kubernetesDeploymentName": kubernetesDeploymentName, "sqs-queue": sqsQueueUrl, "error": err}).Errorf("Failed to get SQS messages")
 					continue
 				}
 
 				if numMessages >= scaleUpMessages {
 					if lastScaleUpTime.Add(scaleUpCoolPeriod).After(time.Now()) {
-						log.Info("Waiting for cool off, skipping scale up ")
+						log.WithFields(log.Fields{"kubernetesDeploymentName": kubernetesDeploymentName}).Info("Waiting for cool off, skipping scale up ")
 						continue
 					}
 
 					if err := p.ScaleUp(); err != nil {
-						log.Errorf("Failed scaling up: %v", err)
+						log.WithFields(log.Fields{"kubernetesDeploymentName": kubernetesDeploymentName}).Errorf("Failed scaling up: %v", err)
 						continue
 					}
-
 					lastScaleUpTime = time.Now()
 				}
 
 				if numMessages <= scaleDownMessages {
 					if lastScaleDownTime.Add(scaleDownCoolPeriod).After(time.Now()) {
-						log.Info("Waiting for cool off, skipping scale down")
+						log.WithFields(log.Fields{"kubernetesDeploymentName": kubernetesDeploymentName}).log.Info("Waiting for cool off, skipping scale down")
 						continue
 					}
 
 					if err := p.ScaleDown(); err != nil {
-						log.Errorf("Failed scaling down: %v", err)
+						log.WithFields(log.Fields{"kubernetesDeploymentName": kubernetesDeploymentName}).Errorf("Failed scaling down: %v", err)
 						continue
 					}
-
 					lastScaleDownTime = time.Now()
 				}
 			}

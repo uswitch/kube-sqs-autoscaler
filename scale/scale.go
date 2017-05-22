@@ -6,7 +6,6 @@ import (
 	"github.com/pkg/errors"
 	"reflect"
 
-	//	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/apis/extensions"
 	"k8s.io/kubernetes/pkg/client/restclient"
 	kclient "k8s.io/kubernetes/pkg/client/unversioned"
@@ -50,8 +49,6 @@ func (p *PodAutoScaler) ScaleUp() error {
 	if err != nil {
 		return errors.Wrap(err, "Failed to get deployment from kube server, no scale up occured")
 	}
-	t := reflect.TypeOf(deployment)
-	log.Infof("deployment type = %s and %s ", t.PkgPath(), t.String())
 
 	currentReplicas := deployment.Spec.Replicas
 
@@ -61,7 +58,7 @@ func (p *PodAutoScaler) ScaleUp() error {
 	}
 
 	err = p.SetReplicas(currentReplicas+1, deployment)
-	//err = p.SetReplicas(currentReplicas + 1)
+
 	if err != nil {
 		return errors.Wrap(err, "Failed to scale up")
 	}
@@ -76,8 +73,6 @@ func (p *PodAutoScaler) ScaleDown() error {
 	if err != nil {
 		return errors.Wrap(err, "Failed to get deployment from kube server, no scale down occured")
 	}
-	t := reflect.TypeOf(deployment)
-	log.Infof("deployment type = %s and %s ", t.PkgPath(), t.String())
 
 	currentReplicas := deployment.Spec.Replicas
 
@@ -87,7 +82,7 @@ func (p *PodAutoScaler) ScaleDown() error {
 	}
 
 	err = p.SetReplicas(currentReplicas-1, deployment)
-	//	err = p.SetReplicas(currentReplicas - 1)
+
 	if err != nil {
 		return errors.Wrap(err, "Failed to scale down")
 	}
@@ -97,19 +92,12 @@ func (p *PodAutoScaler) ScaleDown() error {
 }
 
 func (p *PodAutoScaler) SetReplicas(newReplicas int32, deployment *extensions.Deployment) error {
-	//func (p *PodAutoScaler) SetReplicas(newReplicas int32) error {
-	//	log.Infof("SetReplicas call, deployment api call : p.Client.Deployments(" + p.Namespace + ").Get(" + p.Deployment + ") ")
-	//deployment, err := p.Client.Deployments(p.Namespace).Get(p.Deployment)
-	//if err != nil {
-	//		return errors.Wrap(err, "Failed to get deployment from kube server in SetReplicas function, no change occurred")
-	//	}
-
 	currentReplicas := deployment.Spec.Replicas
 
-	if currentReplicas < int32(p.Min) {
+	if newReplicas < int32(p.Min) {
 		return errors.New(fmt.Sprintf("Set replicas called with value %d below minimum of %d", newReplicas, p.Min))
 	}
-	if currentReplicas > int32(p.Max) {
+	if newReplicas > int32(p.Max) {
 		return errors.New(fmt.Sprintf("Set replicas called with value %d above maximum of %d", newReplicas, p.Max))
 	}
 
@@ -117,9 +105,7 @@ func (p *PodAutoScaler) SetReplicas(newReplicas int32, deployment *extensions.De
 
 	log.Infof("SetReplicas call, deployment api call : p.Client.Deployments(" + p.Namespace + ").Update(" + p.Deployment + ") ")
 	deployment, err := p.Client.Deployments(p.Namespace).Update(deployment)
-	if err != nil {
-		return errors.Wrap(err, "Failed to set replicas")
-	}
+	return err
 
 	log.Infof("Scale successful. Replicas: %d", deployment.Spec.Replicas)
 	return nil
