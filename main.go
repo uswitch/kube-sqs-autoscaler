@@ -46,7 +46,7 @@ func Run(p *scale.PodAutoScaler, sqs *sqs.SqsClient) {
 						continue
 					}
 
-					if err := p.ScaleUp(); err != nil {
+					if err := p.Scale(scale.UP); err != nil {
 						log.WithFields(log.Fields{"kubernetesDeploymentName": kubernetesDeploymentName}).Errorf("Failed scaling up: %v", err)
 						continue
 					}
@@ -55,11 +55,11 @@ func Run(p *scale.PodAutoScaler, sqs *sqs.SqsClient) {
 
 				if numMessages <= scaleDownMessages {
 					if lastScaleDownTime.Add(scaleDownCoolPeriod).After(time.Now()) {
-						log.WithFields(log.Fields{"kubernetesDeploymentName": kubernetesDeploymentName}).log.Info("Waiting for cool off, skipping scale down")
+						log.WithFields(log.Fields{"kubernetesDeploymentName": kubernetesDeploymentName}).Info("Waiting for cool off, skipping scale down")
 						continue
 					}
 
-					if err := p.ScaleDown(); err != nil {
+					if err := p.Scale(scale.DOWN); err != nil {
 						log.WithFields(log.Fields{"kubernetesDeploymentName": kubernetesDeploymentName}).Errorf("Failed scaling down: %v", err)
 						continue
 					}
@@ -73,8 +73,8 @@ func Run(p *scale.PodAutoScaler, sqs *sqs.SqsClient) {
 
 func main() {
 	flag.DurationVar(&pollInterval, "poll-period", 5*time.Second, "The interval in seconds for checking if scaling is required")
-	flag.DurationVar(&scaleDownCoolPeriod, "scale-down-cool-down", 30*time.Second, "The cool down period for scaling down")
-	flag.DurationVar(&scaleUpCoolPeriod, "scale-up-cool-down", 10*time.Second, "The cool down period for scaling up")
+	flag.DurationVar(&scaleDownCoolPeriod, "scale-down-cool-off", 30*time.Second, "The cool off period for scaling down")
+	flag.DurationVar(&scaleUpCoolPeriod, "scale-up-cool-off", 10*time.Second, "The cool off period for scaling up")
 	flag.IntVar(&scaleUpMessages, "scale-up-messages", 100, "Number of sqs messages queued up required for scaling up")
 	flag.IntVar(&scaleDownMessages, "scale-down-messages", 10, "Number of messages required to scale down")
 	flag.IntVar(&maxPods, "max-pods", 5, "Max pods that kube-sqs-autoscaler can scale")
