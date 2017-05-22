@@ -7,6 +7,7 @@ import (
 	"reflect"
 
 	//	"k8s.io/kubernetes/pkg/api"
+	"k8s.io/kubernetes/pkg/apis/extensions"
 	"k8s.io/kubernetes/pkg/client/restclient"
 	kclient "k8s.io/kubernetes/pkg/client/unversioned"
 )
@@ -59,8 +60,8 @@ func (p *PodAutoScaler) ScaleUp() error {
 		return nil
 	}
 
-	//	err = p.SetReplicas(currentReplicas+1, deployment)
-	err = p.SetReplicas(currentReplicas + 1)
+	err = p.SetReplicas(currentReplicas+1, deployment)
+	//err = p.SetReplicas(currentReplicas + 1)
 	if err != nil {
 		return errors.Wrap(err, "Failed to scale up")
 	}
@@ -85,8 +86,8 @@ func (p *PodAutoScaler) ScaleDown() error {
 		return nil
 	}
 
-	//	err = p.SetReplicas(currentReplicas-1, deployment)
-	err = p.SetReplicas(currentReplicas - 1)
+	err = p.SetReplicas(currentReplicas-1, deployment)
+	//	err = p.SetReplicas(currentReplicas - 1)
 	if err != nil {
 		return errors.Wrap(err, "Failed to scale down")
 	}
@@ -95,13 +96,13 @@ func (p *PodAutoScaler) ScaleDown() error {
 	return nil
 }
 
-//func (p *PodAutoScaler) SetReplicas(newReplicas int32, deployment *extensions.Deployment) error {
-func (p *PodAutoScaler) SetReplicas(newReplicas int32) error {
-	log.Infof("SetReplicas call, deployment api call : p.Client.Deployments(" + p.Namespace + ").Get(" + p.Deployment + ") ")
-	deployment, err := p.Client.Deployments(p.Namespace).Get(p.Deployment)
-	if err != nil {
-		return errors.Wrap(err, "Failed to get deployment from kube server in SetReplicas function, no change occurred")
-	}
+func (p *PodAutoScaler) SetReplicas(newReplicas int32, deployment *extensions.Deployment) error {
+	//func (p *PodAutoScaler) SetReplicas(newReplicas int32) error {
+	//	log.Infof("SetReplicas call, deployment api call : p.Client.Deployments(" + p.Namespace + ").Get(" + p.Deployment + ") ")
+	//deployment, err := p.Client.Deployments(p.Namespace).Get(p.Deployment)
+	//if err != nil {
+	//		return errors.Wrap(err, "Failed to get deployment from kube server in SetReplicas function, no change occurred")
+	//	}
 
 	currentReplicas := deployment.Spec.Replicas
 
@@ -115,7 +116,7 @@ func (p *PodAutoScaler) SetReplicas(newReplicas int32) error {
 	deployment.Spec.Replicas = newReplicas
 
 	log.Infof("SetReplicas call, deployment api call : p.Client.Deployments(" + p.Namespace + ").Update(" + p.Deployment + ") ")
-	deployment, err = p.Client.Deployments(p.Namespace).Update(deployment)
+	deployment, err := p.Client.Deployments(p.Namespace).Update(deployment)
 	if err != nil {
 		return errors.Wrap(err, "Failed to set replicas")
 	}
