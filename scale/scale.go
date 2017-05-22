@@ -5,7 +5,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
 
-	"k8s.io/kubernetes/pkg/apis/extensions"
 	"k8s.io/kubernetes/pkg/client/restclient"
 	kclient "k8s.io/kubernetes/pkg/client/unversioned"
 )
@@ -63,13 +62,13 @@ const (
 	DOWN Direction = "down"
 )
 
-func (p *PodAutoScaler) Scale(direction Direction) (changed boolean, err error) {
+func (p *PodAutoScaler) Scale(direction Direction) (changed bool, err error) {
 	var newReplicas int
 
 	log.WithFields(log.Fields{"kubernetesDeploymentName": p.Deployment, "Namespace": p.Namespace}).Infof("Scale " + string(direction) + " call")
 	deployment, err := p.Client.Deployments(p.Namespace).Get(p.Deployment)
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("Failed to get deployment from kube server, no scale %v occured", direction))
+		return false, errors.Wrap(err, fmt.Sprintf("Failed to get deployment from kube server, no scale %v occured", direction))
 	}
 
 	currentReplicas := int(deployment.Spec.Replicas)
@@ -81,17 +80,17 @@ func (p *PodAutoScaler) Scale(direction Direction) (changed boolean, err error) 
 	}
 	if newReplicas == currentReplicas {
 		log.WithFields(log.Fields{"kubernetesDeploymentName": p.Deployment, "Namespace": p.Namespace, "maxPods": p.Max, "minPods": p.Min, "currentReplicas": currentReplicas}).Info("No change needed")
-		return nil
+		return false, nil
 	}
 
 	deployment.Spec.Replicas = int32(newReplicas)
 
 	log.WithFields(log.Fields{"kubernetesDeploymentName": p.Deployment, "newReplicas": newReplicas}).Infof("SetReplicas call")
-	_, err := p.Client.Deployments(p.Namespace).Update(deployment)
+	_, err = p.Client.Deployments(p.Namespace).Update(deployment)
 	if err != nil {
-		return errors.Wrap(err, "Failed to scale "+string(direction))
+		return false, errors.Wrap(err, "Failed to scale "+string(direction))
 	}
 
 	log.WithFields(log.Fields{"kubernetesDeploymentName": p.Deployment, "newReplicas": newReplicas}).Infof("Scale " + string(direction) + " successful")
-	return nil
+	return true, nil
 }
