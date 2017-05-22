@@ -49,7 +49,8 @@ func (p *PodAutoScaler) ScaleUp() error {
 	if err != nil {
 		return errors.Wrap(err, "Failed to get deployment from kube server, no scale up occured")
 	}
-	log.Infof("deployment type = %s", reflect.TypeOf(deployment))
+	t := reflect.TypeOf(deployment)
+	log.Infof("deployment type = %s and %s ", t.PkgPath(), t.String())
 
 	currentReplicas := deployment.Spec.Replicas
 
@@ -58,6 +59,7 @@ func (p *PodAutoScaler) ScaleUp() error {
 		return nil
 	}
 
+	//	err = p.SetReplicas(currentReplicas+1, deployment)
 	err = p.SetReplicas(currentReplicas + 1)
 	if err != nil {
 		return errors.Wrap(err, "Failed to scale up")
@@ -73,15 +75,17 @@ func (p *PodAutoScaler) ScaleDown() error {
 	if err != nil {
 		return errors.Wrap(err, "Failed to get deployment from kube server, no scale down occured")
 	}
-	log.Infof("deployment type = %s", reflect.TypeOf(deployment))
+	t := reflect.TypeOf(deployment)
+	log.Infof("deployment type = %s and %s ", t.PkgPath(), t.String())
 
 	currentReplicas := deployment.Spec.Replicas
 
 	if currentReplicas <= int32(p.Min) {
-		log.WithFields(log.Fields{"minPods": p.Max, "currentReplicas": currentReplicas}).Info("At min pods")
+		log.WithFields(log.Fields{"minPods": p.Min, "currentReplicas": currentReplicas}).Info("At min pods")
 		return nil
 	}
 
+	//	err = p.SetReplicas(currentReplicas-1, deployment)
 	err = p.SetReplicas(currentReplicas - 1)
 	if err != nil {
 		return errors.Wrap(err, "Failed to scale down")
@@ -91,6 +95,7 @@ func (p *PodAutoScaler) ScaleDown() error {
 	return nil
 }
 
+//func (p *PodAutoScaler) SetReplicas(newReplicas int32, deployment *extensions.Deployment) error {
 func (p *PodAutoScaler) SetReplicas(newReplicas int32) error {
 	log.Infof("SetReplicas call, deployment api call : p.Client.Deployments(" + p.Namespace + ").Get(" + p.Deployment + ") ")
 	deployment, err := p.Client.Deployments(p.Namespace).Get(p.Deployment)
