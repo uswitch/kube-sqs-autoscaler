@@ -74,9 +74,9 @@ func (p *PodAutoScaler) Scale(direction Direction) (changed bool, err error) {
 	currentReplicas := int(deployment.Spec.Replicas)
 
 	if direction == UP {
-		newReplicas = max(currentReplicas+1, p.Max)
+		newReplicas = min(currentReplicas+1, p.Max)
 	} else {
-		newReplicas = min(currentReplicas-1, p.Min)
+		newReplicas = max(currentReplicas-1, p.Min)
 	}
 	if newReplicas == currentReplicas {
 		log.WithFields(log.Fields{"kubernetesDeploymentName": p.Deployment, "Namespace": p.Namespace, "maxPods": p.Max, "minPods": p.Min, "currentReplicas": currentReplicas}).Info("No change needed")
