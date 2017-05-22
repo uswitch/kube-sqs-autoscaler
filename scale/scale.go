@@ -49,7 +49,7 @@ func (p *PodAutoScaler) ScaleUp() error {
 	if err != nil {
 		return errors.Wrap(err, "Failed to get deployment from kube server, no scale up occured")
 	}
-	log.Debugf("deployment type = %s", reflect.TypeOf(deployment))
+	log.Infof("deployment type = %s", reflect.TypeOf(deployment))
 
 	currentReplicas := deployment.Spec.Replicas
 
@@ -63,7 +63,7 @@ func (p *PodAutoScaler) ScaleUp() error {
 		return errors.Wrap(err, "Failed to scale up")
 	}
 
-	log.Infof("Scale up successful. Replicas: %d", deployment.Spec.Replicas)
+	log.Infof("Scale up successful")
 	return nil
 }
 
@@ -73,7 +73,7 @@ func (p *PodAutoScaler) ScaleDown() error {
 	if err != nil {
 		return errors.Wrap(err, "Failed to get deployment from kube server, no scale down occured")
 	}
-	log.Debugf("deployment type = %s", reflect.TypeOf(deployment))
+	log.Infof("deployment type = %s", reflect.TypeOf(deployment))
 
 	currentReplicas := deployment.Spec.Replicas
 
@@ -87,7 +87,7 @@ func (p *PodAutoScaler) ScaleDown() error {
 		return errors.Wrap(err, "Failed to scale down")
 	}
 
-	log.Infof("Scale down successful. Replicas: %d", deployment.Spec.Replicas)
+	log.Infof("Scale down successful")
 	return nil
 }
 
