@@ -47,6 +47,7 @@ func Run(p *scale.PodAutoScaler, sqs *sqs.SqsClient) {
 						continue
 					}
 
+					log.WithFields(log.Fields{"kubernetesDeploymentName": kubernetesDeploymentName, "scaleUpMessages": scaleUpMessages, "numMessages": numMessages}).Info("Scale up may be appropriate")
 					if changed, err = p.Scale(scale.UP); err != nil {
 						log.WithFields(log.Fields{"kubernetesDeploymentName": kubernetesDeploymentName}).Errorf("Failed scaling up: %v", err)
 						continue
@@ -61,7 +62,7 @@ func Run(p *scale.PodAutoScaler, sqs *sqs.SqsClient) {
 						log.WithFields(log.Fields{"kubernetesDeploymentName": kubernetesDeploymentName}).Info("Waiting for cool off, skipping scale down")
 						continue
 					}
-
+					log.WithFields(log.Fields{"kubernetesDeploymentName": kubernetesDeploymentName, "scaleUpMessages": scaleUpMessages, "numMessages": numMessages}).Info("Scale down may be appropriate")
 					if changed, err = p.Scale(scale.DOWN); err != nil {
 						log.WithFields(log.Fields{"kubernetesDeploymentName": kubernetesDeploymentName}).Errorf("Failed scaling down: %v", err)
 						continue
