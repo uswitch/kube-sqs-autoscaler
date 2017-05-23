@@ -107,15 +107,17 @@ func main() {
 
 	if myConf.kubernetesDeploymentName == "" {
 		log.Infof("kubernetes-deployment name not set")
-		return
+		os.Exit(1)
 	}
 	if myConf.sqsQueueUrl == "" {
 		log.Infof("sqs-queue-url name not set")
-		return
+		os.Exit(1)
 	}
 	if !myConf.active {
-		log.Infof("active flag set to false, exiting")
-		return
+		log.Infof("active flag set to false, will not monitor queue")
+		for {
+			// keep active in kubernetes
+		}
 	}
 
 	if myConf.scaleDownOperator != "*" && myConf.scaleDownOperator != "/" && myConf.scaleDownOperator != "+" && myConf.scaleDownOperator != "-" {
