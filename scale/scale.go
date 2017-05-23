@@ -4,6 +4,7 @@ import (
 	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
+	"math"
 
 	"k8s.io/kubernetes/pkg/client/restclient"
 	kclient "k8s.io/kubernetes/pkg/client/unversioned"
@@ -14,14 +15,18 @@ type KubeClient interface {
 }
 
 type PodAutoScaler struct {
-	Client     KubeClient
-	Max        int
-	Min        int
-	Deployment string
-	Namespace  string
+	Client            KubeClient
+	Max               int
+	Min               int
+	Deployment        string
+	Namespace         string
+	ScaleUpAmount     float64
+	ScaleDownAmount   float64
+	ScaleUpOperator   string
+	ScaleDownOperator string
 }
 
-func NewPodAutoScaler(kubernetesDeploymentName string, kubernetesNamespace string, max int, min int) *PodAutoScaler {
+func NewPodAutoScaler(kubernetesDeploymentName string, kubernetesNamespace string, max int, min int, scaleUpOperator string, scaleUpAmount float64, scaleDownOperator string, scaleDownAmount float64) *PodAutoScaler {
 	log.Infof("Configuring with namespace " + kubernetesNamespace)
 	config, err := restclient.InClusterConfig()
 	if err != nil {
@@ -33,11 +38,15 @@ func NewPodAutoScaler(kubernetesDeploymentName string, kubernetesNamespace strin
 		panic("Failed to configure client")
 	}
 	return &PodAutoScaler{
-		Client:     k8sClient,
-		Min:        min,
-		Max:        max,
-		Deployment: kubernetesDeploymentName,
-		Namespace:  kubernetesNamespace,
+		Client:            k8sClient,
+		Min:               min,
+		Max:               max,
+		Deployment:        kubernetesDeploymentName,
+		Namespace:         kubernetesNamespace,
+		ScaleUpAmount:     scaleUpAmount,
+		ScaleDownAmount:   scaleDownAmount,
+		ScaleUpOperator:   scaleUpOperator,
+		ScaleDownOperator: scaleDownOperator,
 	}
 }
 
@@ -74,9 +83,27 @@ func (p *PodAutoScaler) Scale(direction Direction) (changed bool, err error) {
 	currentReplicas := int(deployment.Spec.Replicas)
 
 	if direction == UP {
-		newReplicas = min(currentReplicas+1, p.Max)
+		switch p.ScaleUpOperator {
+		case "*":
+			newReplicas = int(math.Min(float64(currentReplicas)*p.ScaleUpAmount, float64(p.Max)))
+		case "+":
+			newReplicas = int(math.Min(float64(currentReplicas)+p.ScaleUpAmount, float64(p.Max)))
+		case "-":
+			newReplicas = int(math.Min(float64(currentReplicas)-p.ScaleUpAmount, float64(p.Max)))
+		case "/":
+			newReplicas = int(math.Min(float64(currentReplicas)/p.ScaleUpAmount, float64(p.Max)))
+		}
 	} else {
-		newReplicas = max(currentReplicas-1, p.Min)
+		switch p.ScaleDownOperator {
+		case "*":
+			newReplicas = int(math.Max(float64(currentReplicas)*p.ScaleDownAmount, float64(p.Min)))
+		case "+":
+			newReplicas = int(math.Max(float64(currentReplicas)+p.ScaleDownAmount, float64(p.Min)))
+		case "-":
+			newReplicas = int(math.Max(float64(currentReplicas)-p.ScaleDownAmount, float64(p.Min)))
+		case "/":
+			newReplicas = int(math.Max(float64(currentReplicas)/p.ScaleDownAmount, float64(p.Min)))
+		}
 	}
 	if newReplicas == currentReplicas {
 		log.WithFields(log.Fields{"kubernetesDeploymentName": p.Deployment, "Namespace": p.Namespace, "maxPods": p.Max, "minPods": p.Min, "currentReplicas": currentReplicas}).Info("No change needed")
