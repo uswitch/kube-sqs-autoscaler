@@ -1,13 +1,10 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
-	io "io/ioutil"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"os"
 
 	"github.com/uswitch/kube-sqs-autoscaler/scale"
 	"github.com/uswitch/kube-sqs-autoscaler/sqs"
@@ -81,46 +78,6 @@ func Run(p *scale.PodAutoScaler, sqs *sqs.SqsClient) {
 
 }
 
-type Configuration struct {
-	PollInterval             time.Duration `json:"pollperiod"`
-	ScaleDownCoolPeriod      time.Duration `json:"scaledowncooloff"`
-	ScaleUpCoolPeriod        time.Duration `json:"scaleupcooloff"`
-	ScaleDownMessages        int           `json:"scaleDownMessages"`
-	ScaleUpMessages          int           `json:"scaleupmessages"`
-	MaxPods                  int           `json:"maxpods"`
-	MinPods                  int           `json:"minpods`
-	AwsRegion                string        `json:"awsregion"`
-	SqsQueueUrl              string        `json:"sqs-queue-url"`
-	KubernetesDeploymentName string        `json:"kubernetesdeployment"`
-	KubernetesNamespace      string        `json:"kubernetesnamespace"`
-	Active                   bool          `json:"active"`
-}
-
-type ConfigurationOld struct {
-	Id      int
-	Key     int `json:"keyhere"`
-	MaxPods int `json:"maxpods"`
-}
-
-// Returns array of configurations to use.
-//TODO fix duration parsing
-func parseConfigFile(configFileName string) (configList []Configuration, err error) {
-	//configList = make([]Configuration, 0)
-	data, err := io.ReadFile(configFileName)
-	log.Info("data read as %v", string(data))
-	if err != nil {
-		log.Errorf("Unable to open file %v", configFileName)
-		return nil, err
-	}
-	err = json.Unmarshal(data, &configList)
-	for i := 0; i < len(configList); i += 1 {
-		v := configList[i]
-		log.Infof("conf %v read as %+v", i, v)
-	}
-
-	return configList, nil
-}
-
 func main() {
 	flag.DurationVar(&pollInterval, "poll-period", 5*time.Second, "The interval in seconds for checking if scaling is required")
 	flag.DurationVar(&scaleDownCoolPeriod, "scale-down-cool-off", 30*time.Second, "The cool off period for scaling down")
@@ -147,6 +104,9 @@ func main() {
 		log.Infof("config read, got %v items", len(configList))
 		return
 	}
+	// TODO check configs are valid (have all needed attributes)
+	// TODO work to start a process for each configuration
+
 	log.Info("Starting kube-sqs-autoscaler for deployment " + kubernetesDeploymentName + " and namespace " + kubernetesNamespace)
 	p := scale.NewPodAutoScaler(kubernetesDeploymentName, kubernetesNamespace, maxPods, minPods)
 	sqs := sqs.NewSqsClient(sqsQueueUrl, awsRegion)
