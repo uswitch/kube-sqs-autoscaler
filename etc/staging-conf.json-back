@@ -1,0 +1,31 @@
+[
+    {
+        "sqs-queue-url": "https://sqs.eu-west-1.amazonaws.com/136393635417/crm-firehose-staging",
+        "kubernetesdeployment":"crm-firehose-go-staging",
+        "kubernetesnamespace":"crm",
+        "awsregion":"euwest-1",
+        "pollperiod":"30s",
+        "scaledowncooloff":"2m",
+        "scaleupcooloff":"2m",
+        "scaleupmessages":50,
+        "scaledownmessages":10,
+        "maxpods":6,
+        "minpods":1,
+        "active": true
+    }
+    ,
+    {
+        "sqs-queue-url": "https://sqs.eu-west-1.amazonaws.com/136393635417/crm-input-staging",
+        "kubernetesdeployment":"crm-coordinator-production",
+        "kubernetesnamespace":"crm",
+        "awsregion":"euwest-1",
+        "pollperiod":"30s",
+        "scaledowncooloff":"2m",
+        "scaleupcooloff":"2m",
+        "scaleupmessages":50,
+        "scaledownmessages":1,
+        "maxpods":48,
+        "minpods":12,
+        "active": false
+    }
+]
