@@ -17,44 +17,43 @@ In all cases the resulting number of replicas are restricted to the range (min-p
 The active=false flag can be used to disable a configuration while leaving all the parameters in place. 
 
 ### Usage guide
-
-./kube-sqs-autoscaler:
-  -active
-    	true/false - whether autoscaling is active for this deployment. Containers with active=false will terminate with success status (default true)
-  -aws-region string
-    	Your AWS region
-  -kubernetes-deployment string
-    	Kubernetes Deployment to scale. This field is required
-  -kubernetes-namespace string
-    	The namespace your deployment is running in (default "default")
-  -max-pods int
-    	Max pods that kube-sqs-autoscaler can scale (default 5)
-  -min-pods int
-    	Min pods that kube-sqs-autoscaler can scale (default 1)
-  -poll-period duration
-    	The interval in seconds for checking if scaling is required (default 30s)
-  -scale-down-amount float
-    	The number used to scale down the replicas, used with scale-down-operator, e.g. - 3 or / 2 (default 1)
-  -scale-down-cool-off duration
-    	The cool off period for scaling down (default 30s)
-  -scale-down-messages int
-    	Number of messages required to scale down
-  -scale-down-operator string
-    	The operator used to scale down the replicas, used with scale-up-amount, e.g. - 3 or / 2 (default "-")
-  -scale-up-amount float
-    	The number used to scale up the replicas, used with scale-up-operator, e.g. + 3 or * 2 (default 1)
-  -scale-up-cool-off duration
-    	The cool off period for scaling up (default 2m0s)
-  -scale-up-messages int
-    	Number of sqs messages queued up required for scaling up (default 1000)
-  -scale-up-operator string
-    	The operator used to scale up the replicas, used with scale-up-amount, e.g. + 3 or * 2 (default "+")
-  -sqs-queue-url string
-    	The sqs queue url
+    ./kube-sqs-autoscaler:
+    -active
+    true/false - whether autoscaling is active for this deployment. Containers with active=false will terminate with success status (default true)
+    -aws-region string
+    Your AWS region
+    -kubernetes-deployment string
+    Kubernetes Deployment to scale. This field is required
+    -kubernetes-namespace string
+    The namespace your deployment is running in (default "default")
+    -max-pods int
+    Max pods that kube-sqs-autoscaler can scale (default 5)
+    -min-pods int
+    Min pods that kube-sqs-autoscaler can scale (default 1)
+    -poll-period duration
+    The interval in seconds for checking if scaling is required (default 30s)
+    -scale-down-amount float
+    The number used to scale down the replicas, used with scale-down-operator, e.g. - 3 or / 2 (default 1)
+    -scale-down-cool-off duration
+    The cool off period for scaling down (default 30s)
+    -scale-down-messages int
+    Number of messages required to scale down
+    -scale-down-operator string
+    The operator used to scale down the replicas, used with scale-up-amount, e.g. - 3 or / 2 (default "-")
+    -scale-up-amount float
+    The number used to scale up the replicas, used with scale-up-operator, e.g. + 3 or * 2 (default 1)
+    -scale-up-cool-off duration
+    The cool off period for scaling up (default 2m0s)
+    -scale-up-messages int
+    Number of sqs messages queued up required for scaling up (default 1000)
+    -scale-up-operator string
+    The operator used to scale up the replicas, used with scale-up-amount, e.g. + 3 or * 2 (default "+")
+    -sqs-queue-url string
+    The sqs queue url
 
 ### Example
 
-./kube-sqs-autoscaler
+    ./kube-sqs-autoscaler
             --sqs-queue-url=https://sqs.eu-west-1.amazonaws.com/136393635417/crm-firehose-production
             --kubernetes-deployment=crm-firehose-go-production
             --kubernetes-namespace=crm
