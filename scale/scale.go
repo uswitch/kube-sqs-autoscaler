@@ -4,7 +4,6 @@ import (
 	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
-	"math"
 
 	"k8s.io/kubernetes/pkg/client/restclient"
 	kclient "k8s.io/kubernetes/pkg/client/unversioned"
@@ -85,26 +84,27 @@ func (p *PodAutoScaler) Scale(direction Direction) (changed bool, err error) {
 	if direction == UP {
 		switch p.ScaleUpOperator {
 		case "*":
-			newReplicas = int(math.Min(float64(currentReplicas)*p.ScaleUpAmount, float64(p.Max)))
+			newReplicas = int(float64(currentReplicas) * p.ScaleUpAmount)
 		case "+":
-			newReplicas = int(math.Min(float64(currentReplicas)+p.ScaleUpAmount, float64(p.Max)))
+			newReplicas = int(float64(currentReplicas) + p.ScaleUpAmount)
 		case "-":
-			newReplicas = int(math.Min(float64(currentReplicas)-p.ScaleUpAmount, float64(p.Max)))
+			newReplicas = int(float64(currentReplicas) - p.ScaleUpAmount)
 		case "/":
-			newReplicas = int(math.Min(float64(currentReplicas)/p.ScaleUpAmount, float64(p.Max)))
+			newReplicas = int(float64(currentReplicas) / p.ScaleUpAmount)
 		}
 	} else {
 		switch p.ScaleDownOperator {
 		case "*":
-			newReplicas = int(math.Max(float64(currentReplicas)*p.ScaleDownAmount, float64(p.Min)))
+			newReplicas = int(float64(currentReplicas) * p.ScaleDownAmount)
 		case "+":
-			newReplicas = int(math.Max(float64(currentReplicas)+p.ScaleDownAmount, float64(p.Min)))
+			newReplicas = int(float64(currentReplicas) + p.ScaleDownAmount)
 		case "-":
-			newReplicas = int(math.Max(float64(currentReplicas)-p.ScaleDownAmount, float64(p.Min)))
+			newReplicas = int(float64(currentReplicas) - p.ScaleDownAmount)
 		case "/":
-			newReplicas = int(math.Max(float64(currentReplicas)/p.ScaleDownAmount, float64(p.Min)))
+			newReplicas = int(float64(currentReplicas) / p.ScaleDownAmount)
 		}
 	}
+	newReplicas = max(min(newReplicas, p.Max), p.Min) // Force to permitted range
 	if newReplicas == currentReplicas {
 		log.WithFields(log.Fields{"kubernetesDeploymentName": p.Deployment, "Namespace": p.Namespace, "maxPods": p.Max, "minPods": p.Min, "currentReplicas": currentReplicas}).Info("No change needed")
 		return false, nil
