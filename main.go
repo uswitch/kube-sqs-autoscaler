@@ -105,6 +105,12 @@ func main() {
 	flag.BoolVar(&myConf.active, "active", true, "true/false - whether autoscaling is active for this deployment. Containers with active=false will terminate with success status")
 	flag.Parse()
 
+	if !myConf.active {
+		log.Infof("active flag set to false, will not monitor queue")
+		select {}
+		// keep active in kubernetes - sleep forever
+	}
+
 	if myConf.kubernetesDeploymentName == "" {
 		log.Infof("kubernetes-deployment name not set")
 		os.Exit(1)
@@ -113,13 +119,6 @@ func main() {
 		log.Infof("sqs-queue-url name not set")
 		os.Exit(1)
 	}
-	if !myConf.active {
-		log.Infof("active flag set to false, will not monitor queue")
-		for {
-			// keep active in kubernetes
-		}
-	}
-
 	if myConf.scaleDownOperator != "*" && myConf.scaleDownOperator != "/" && myConf.scaleDownOperator != "+" && myConf.scaleDownOperator != "-" {
 		log.Infof("scale-down-operator flag %v not in the valid set of *, +, /, - ", myConf.scaleDownOperator)
 		os.Exit(1)

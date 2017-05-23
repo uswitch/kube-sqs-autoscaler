@@ -19,7 +19,7 @@ The active=false flag can be used to disable a configuration while leaving all t
 ### Usage guide
     ./kube-sqs-autoscaler:
     -active
-    true/false - whether autoscaling is active for this deployment. Containers with active=false will terminate with success status (default true)
+    true/false - whether autoscaling is active for this deployment. Containers with active=false will not monitor queues
     -aws-region string
     Your AWS region
     -kubernetes-deployment string
