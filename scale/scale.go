@@ -106,7 +106,7 @@ func (p *PodAutoScaler) Scale(direction Direction) (changed bool, err error) {
 	}
 	newReplicas = max(min(newReplicas, p.Max), p.Min) // Force to permitted range
 	if newReplicas == currentReplicas {
-		log.WithFields(log.Fields{"kubernetesDeploymentName": p.Deployment, "Namespace": p.Namespace, "maxPods": p.Max, "minPods": p.Min, "currentReplicas": currentReplicas}).Info("No change needed")
+		log.WithFields(log.Fields{"kubernetesDeploymentName": p.Deployment, "Namespace": p.Namespace, "maxPods": p.Max, "minPods": p.Min, "currentReplicas": currentReplicas}).Info("Target replicas = currentReplicas, no change needed")
 		return false, nil
 	}
 

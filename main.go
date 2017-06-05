@@ -52,7 +52,7 @@ func Run(p *scale.PodAutoScaler, sqs *sqs.SqsClient, myConf MyConfType) {
 						continue
 					}
 
-					log.WithFields(log.Fields{"kubernetesDeploymentName": myConf.kubernetesDeploymentName, "scaleUpMessages": myConf.scaleUpMessages, "numMessages": numMessages}).Info("Scale up may be appropriate")
+					log.WithFields(log.Fields{"kubernetesDeploymentName": myConf.kubernetesDeploymentName, "scaleUpMessages": myConf.scaleUpMessages, "numMessages": numMessages}).Info("Queue size above threshold, scale up may be appropriate, will check replica count next - scaling will only occur if current replicas below maxPods")
 					if changed, err = p.Scale(scale.UP); err != nil {
 						log.WithFields(log.Fields{"kubernetesDeploymentName": myConf.kubernetesDeploymentName}).Errorf("Failed scaling up: %v", err)
 						continue
@@ -67,7 +67,7 @@ func Run(p *scale.PodAutoScaler, sqs *sqs.SqsClient, myConf MyConfType) {
 						log.WithFields(log.Fields{"kubernetesDeploymentName": myConf.kubernetesDeploymentName}).Info("Waiting for cool off, skipping scale down")
 						continue
 					}
-					log.WithFields(log.Fields{"kubernetesDeploymentName": myConf.kubernetesDeploymentName, "scaleDownMessages": myConf.scaleDownMessages, "numMessages": numMessages}).Info("Scale down may be appropriate")
+					log.WithFields(log.Fields{"kubernetesDeploymentName": myConf.kubernetesDeploymentName, "scaleDownMessages": myConf.scaleDownMessages, "numMessages": numMessages}).Info("Queue size below threshold, scale down may be appropriate, will check replica count next  - scaling will only occur if current replicas above minPods")
 					if changed, err = p.Scale(scale.DOWN); err != nil {
 						log.WithFields(log.Fields{"kubernetesDeploymentName": myConf.kubernetesDeploymentName}).Errorf("Failed scaling down: %v", err)
 						continue
