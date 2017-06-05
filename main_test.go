@@ -13,35 +13,37 @@ import (
 	kclient "k8s.io/kubernetes/pkg/client/unversioned"
 	"k8s.io/kubernetes/pkg/watch"
 
+	conf "github.com/uswitch/kube-sqs-autoscaler/conf"
 	"github.com/uswitch/kube-sqs-autoscaler/scale"
 	mainsqs "github.com/uswitch/kube-sqs-autoscaler/sqs"
 )
 
-var myConf = MyConfType{
-	pollInterval:             5 * time.Second,
-	scaleDownCoolPeriod:      10 * time.Second,
-	scaleUpCoolPeriod:        10 * time.Second,
-	scaleUpMessages:          100,
-	scaleDownMessages:        10,
-	maxPods:                  5,
-	minPods:                  1,
-	awsRegion:                "us-east-1",
-	scaleUpOperator:          "+",
-	scaleUpAmount:            1.0,
-	scaleDownOperator:        "-",
-	scaleDownAmount:          1.0,
-	sqsQueueUrl:              "example.com",
-	kubernetesDeploymentName: "test",
-	kubernetesNamespace:      "test",
+var myConf = conf.MyConfType{
+	PollInterval:             5 * time.Second,
+	ScaleDownCoolPeriod:      10 * time.Second,
+	ScaleUpCoolPeriod:        10 * time.Second,
+	ScaleUpMessages:          100,
+	ScaleDownMessages:        10,
+	MaxPods:                  5,
+	MinPods:                  1,
+	AwsRegion:                "us-east-1",
+	ScaleUpOperator:          "+",
+	ScaleUpAmount:            1.0,
+	ScaleDownOperator:        "-",
+	ScaleDownAmount:          1.0,
+	SqsQueueUrl:              "example.com",
+	KubernetesDeploymentName: "test",
+	KubernetesNamespace:      "test",
 }
 
 func TestRunReachMinReplicas(t *testing.T) {
+	log.Info("Starting TestRunReachMinReplicas")
 	testConf := myConf
-	testConf.pollInterval = 1 * time.Second
-	testConf.scaleDownCoolPeriod = 1 * time.Second
-	testConf.kubernetesDeploymentName = "TestRunReachMinReplicas"
+	testConf.PollInterval = 1 * time.Second
+	testConf.ScaleDownCoolPeriod = 1 * time.Second
+	testConf.KubernetesDeploymentName = "TestRunReachMinReplicas"
 
-	p := NewMockPodAutoScaler(testConf.kubernetesDeploymentName, testConf.kubernetesNamespace, testConf.maxPods, testConf.minPods, testConf.scaleUpOperator, testConf.scaleUpAmount, testConf.scaleDownOperator, testConf.scaleDownAmount)
+	p := NewMockPodAutoScaler(testConf)
 	s := NewMockSqsClient()
 
 	go Run(p, s, testConf)
@@ -53,18 +55,20 @@ func TestRunReachMinReplicas(t *testing.T) {
 	s.Client.SetQueueAttributes(input)
 
 	time.Sleep(10 * time.Second)
-	deployment, _ := p.Client.Deployments(testConf.kubernetesDeploymentName).Get("test")
-	assert.Equal(t, int32(testConf.minPods), deployment.Spec.Replicas, "Number of replicas should be the min")
+	deployment, _ := p.Client.Deployments(testConf.KubernetesDeploymentName).Get("test")
+	assert.Equal(t, int32(testConf.MinPods), deployment.Spec.Replicas, "Number of replicas should be the min")
+	log.Info("Pass TestRunReachMinReplicas")
 }
 
 func TestRunReachMaxReplicas(t *testing.T) {
-
 	testConf := myConf
-	testConf.pollInterval = 1 * time.Second
-	testConf.scaleUpCoolPeriod = 1 * time.Second
-	testConf.kubernetesDeploymentName = "TestRunReachMaxReplicas"
 
-	p := NewMockPodAutoScaler(testConf.kubernetesDeploymentName, testConf.kubernetesNamespace, testConf.maxPods, testConf.minPods, testConf.scaleUpOperator, testConf.scaleUpAmount, testConf.scaleDownOperator, testConf.scaleDownAmount)
+	log.Info("Starting TestRunReachMaxReplicas")
+	testConf.PollInterval = 1 * time.Second
+	testConf.ScaleUpCoolPeriod = 1 * time.Second
+	testConf.KubernetesDeploymentName = "TestRunReachMaxReplicas"
+
+	p := NewMockPodAutoScaler(testConf)
 	s := NewMockSqsClient()
 
 	go Run(p, s, testConf)
@@ -77,13 +81,15 @@ func TestRunReachMaxReplicas(t *testing.T) {
 	s.Client.SetQueueAttributes(input)
 
 	time.Sleep(10 * time.Second)
-	deployment, _ := p.Client.Deployments(testConf.kubernetesDeploymentName).Get("test")
-	assert.Equal(t, int32(testConf.maxPods), deployment.Spec.Replicas, "Number of replicas should be the max")
+	deployment, _ := p.Client.Deployments(testConf.KubernetesDeploymentName).Get("test")
+	assert.Equal(t, int32(testConf.MaxPods), deployment.Spec.Replicas, "Number of replicas should be the max")
+	log.Info("Pass TestRunReachMaxReplicas")
 }
 
 func TestRunScaleUpCoolDown(t *testing.T) {
-
-	p := NewMockPodAutoScaler(myConf.kubernetesDeploymentName, myConf.kubernetesNamespace, myConf.maxPods, myConf.minPods, myConf.scaleUpOperator, myConf.scaleUpAmount, myConf.scaleDownOperator, myConf.scaleDownAmount)
+	testConf := myConf
+	log.Info("Starting TestRunScaleUpCoolDown")
+	p := NewMockPodAutoScaler(testConf)
 	s := NewMockSqsClient()
 
 	//FIX here
@@ -99,13 +105,15 @@ func TestRunScaleUpCoolDown(t *testing.T) {
 	s.Client.SetQueueAttributes(input)
 
 	time.Sleep(15 * time.Second)
-	deployment, _ := p.Client.Deployments("test").Get("test")
+	deployment, _ := p.Client.Deployments(testConf.KubernetesDeploymentName).Get("test")
 	assert.Equal(t, int32(4), deployment.Spec.Replicas, "Number of replicas should be 4 if cool down for scaling up was obeyed")
+	log.Info("Pass TestRunReachMaxReplicas")
 }
 
 func TestRunScaleDownCoolDown(t *testing.T) {
+	testConf := myConf
 	log.Info("Starting TestRunScaleDownCoolDown")
-	p := NewMockPodAutoScaler(myConf.kubernetesDeploymentName, myConf.kubernetesNamespace, myConf.maxPods, myConf.minPods, myConf.scaleUpOperator, myConf.scaleUpAmount, myConf.scaleDownOperator, myConf.scaleDownAmount)
+	p := NewMockPodAutoScaler(myConf)
 	s := NewMockSqsClient()
 
 	go Run(p, s, myConf)
@@ -118,8 +126,9 @@ func TestRunScaleDownCoolDown(t *testing.T) {
 	s.Client.SetQueueAttributes(input)
 
 	time.Sleep(15 * time.Second)
-	deployment, _ := p.Client.Deployments("test").Get("test")
+	deployment, _ := p.Client.Deployments(testConf.KubernetesDeploymentName).Get("test")
 	assert.Equal(t, int32(2), deployment.Spec.Replicas, "Number of replicas should be 2 if cool down for scaling down was obeyed")
+	log.Info("Pass TestRunScaleDownCoolDown")
 }
 
 type MockDeployment struct {
@@ -180,19 +189,19 @@ func NewMockKubeClient() *MockKubeClient {
 	}
 }
 
-func NewMockPodAutoScaler(kubernetesDeploymentName string, kubernetesNamespace string, max int, min int, scaleUpOperator string, scaleUpAmount float64, scaleDownOperator string, scaleDownAmount float64) *scale.PodAutoScaler {
+func NewMockPodAutoScaler(conf conf.MyConfType) *scale.PodAutoScaler {
 	mockClient := NewMockKubeClient()
 
 	return &scale.PodAutoScaler{
 		Client:            mockClient,
-		Min:               min,
-		Max:               max,
-		Deployment:        kubernetesDeploymentName,
-		Namespace:         kubernetesNamespace,
-		ScaleUpAmount:     scaleUpAmount,
-		ScaleDownAmount:   scaleDownAmount,
-		ScaleUpOperator:   scaleUpOperator,
-		ScaleDownOperator: scaleDownOperator,
+		Min:               conf.MinPods,
+		Max:               conf.MaxPods,
+		Deployment:        conf.KubernetesDeploymentName,
+		Namespace:         conf.KubernetesNamespace,
+		ScaleUpAmount:     conf.ScaleUpAmount,
+		ScaleDownAmount:   conf.ScaleDownAmount,
+		ScaleUpOperator:   conf.ScaleUpOperator,
+		ScaleDownOperator: conf.ScaleDownOperator,
 	}
 }
 

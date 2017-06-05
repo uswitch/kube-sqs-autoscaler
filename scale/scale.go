@@ -4,7 +4,7 @@ import (
 	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
-
+	conf "github.com/uswitch/kube-sqs-autoscaler/conf"
 	"k8s.io/kubernetes/pkg/client/restclient"
 	kclient "k8s.io/kubernetes/pkg/client/unversioned"
 )
@@ -25,8 +25,8 @@ type PodAutoScaler struct {
 	ScaleDownOperator string
 }
 
-func NewPodAutoScaler(kubernetesDeploymentName string, kubernetesNamespace string, max int, min int, scaleUpOperator string, scaleUpAmount float64, scaleDownOperator string, scaleDownAmount float64) *PodAutoScaler {
-	log.Infof("Configuring with namespace " + kubernetesNamespace)
+func NewPodAutoScaler(myConf conf.MyConfType) *PodAutoScaler {
+	log.Infof("Configuring with namespace " + myConf.KubernetesNamespace)
 	config, err := restclient.InClusterConfig()
 	if err != nil {
 		panic("Failed to configure incluster config")
@@ -38,14 +38,14 @@ func NewPodAutoScaler(kubernetesDeploymentName string, kubernetesNamespace strin
 	}
 	return &PodAutoScaler{
 		Client:            k8sClient,
-		Min:               min,
-		Max:               max,
-		Deployment:        kubernetesDeploymentName,
-		Namespace:         kubernetesNamespace,
-		ScaleUpAmount:     scaleUpAmount,
-		ScaleDownAmount:   scaleDownAmount,
-		ScaleUpOperator:   scaleUpOperator,
-		ScaleDownOperator: scaleDownOperator,
+		Min:               myConf.MinPods,
+		Max:               myConf.MaxPods,
+		Deployment:        myConf.KubernetesDeploymentName,
+		Namespace:         myConf.KubernetesNamespace,
+		ScaleUpAmount:     myConf.ScaleUpAmount,
+		ScaleDownAmount:   myConf.ScaleDownAmount,
+		ScaleUpOperator:   myConf.ScaleUpOperator,
+		ScaleDownOperator: myConf.ScaleDownOperator,
 	}
 }
 
